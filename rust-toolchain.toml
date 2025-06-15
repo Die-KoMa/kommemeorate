@@ -1,0 +1,8 @@
+# © 2025 Maximilian Marx
+# SPDX-FileContributor: Maximilian Marx
+#
+# SPDX-License-Identifier: EUPL-1.2
+
+[toolchain]
+channel = "stable"
+components = ["clippy", "rust-analyzer", "rust-docs", "rust-src", "rustfmt"]

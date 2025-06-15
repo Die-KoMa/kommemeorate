@@ -1,0 +1,12 @@
+# © 2025 Maximilian Marx
+# SPDX-FileContributor: Maximilian Marx
+#
+# SPDX-License-Identifier: EUPL-1.2
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[licenses]
+unused-allowed-license = "warn"
+allow = ["EUPL-1.2", "MIT", "Apache-2.0", "Unicode-3.0", "BSD-3-Clause", "ISC"]

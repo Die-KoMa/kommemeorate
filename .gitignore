@@ -1,0 +1,14 @@
+# © 2025 Maximilian Marx
+# SPDX-FileContributor: Maximilian Marx
+#
+# SPDX-License-Identifier: EUPL-1.2
+
+*~
+\#*#
+
+/target
+
+/result*
+/.direnv
+/.projectile
+/.pre-commit-config.yaml

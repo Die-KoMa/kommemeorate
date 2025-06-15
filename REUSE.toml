@@ -1,0 +1,28 @@
+# © 2025 Maximilian Marx
+# SPDX-FileContributor: Maximilian Marx
+#
+# SPDX-License-Identifier: EUPL-1.2
+
+version = 1
+SPDX-PackageName = "aksync"
+SPDX-PackageSupplier = "Maximilian Marx <mmarx@wh2.tu-dresden.de>"
+
+[[annotations]]
+path = ".envrc"
+SPDX-FileCopyrightText = "© 2025 Maximilian Marx"
+SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+path = "flake.lock"
+SPDX-FileCopyrightText = "© 2025 Maximilian Marx"
+SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+path = "Cargo.lock"
+SPDX-FileCopyrightText = "© 2025 Maximilian Marx"
+SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+path = ".github/workflows/ci.yml"
+SPDX-FileCopyrightText = "© 2025 Maximilian Marx"
+SPDX-License-Identifier = "EUPL-1.2"
