@@ -18,8 +18,15 @@ clap = { version = "4.5.38", features = ["derive"] }
 env_logger = "0.11.8"
 itertools = "0.14.0"
 log = "0.4.27"
+sd-notify = "0.4.5"
 test-log = "0.2.17"
-tokio = { version = "1.45.1", features = ["macros", "rt", "rt-multi-thread"] }
+tokio = { version = "1.45.1", features = [
+  "macros",
+  "rt",
+  "rt-multi-thread",
+  "signal",
+  "sync",
+] }
 
 [build-dependencies]
 clap = { version = "4.5.38", features = ["derive"] }
