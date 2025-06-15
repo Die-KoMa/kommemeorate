@@ -9,5 +9,6 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 pub(crate) struct Cli {
-    config: Option<PathBuf>,
+    #[arg(long)]
+    pub(crate) config: PathBuf,
 }

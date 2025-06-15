@@ -89,7 +89,6 @@ impl Notifications {
         )
     }
 
-    #[allow(unused)]
     pub(crate) fn failed(code: u32, message: &str) -> Result<(), Error> {
         notify(
             false,

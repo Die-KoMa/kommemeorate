@@ -15,10 +15,12 @@ authors = ["Maximilian Marx <mmarx@wh2.tu-dresden.de>"]
 [dependencies]
 anyhow = "1.0.98"
 clap = { version = "4.5.38", features = ["derive"] }
+config = { version = "0.15.11", features = ["toml"], default-features = false }
 env_logger = "0.11.8"
 itertools = "0.14.0"
 log = "0.4.27"
 sd-notify = "0.4.5"
+serde = { version = "1.0.219", features = ["derive"] }
 test-log = "0.2.17"
 tokio = { version = "1.45.1", features = [
   "macros",
