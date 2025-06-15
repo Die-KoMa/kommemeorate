@@ -5,6 +5,7 @@
 
 use std::io::Error;
 
+use sd_notify::{NotifyState, notify};
 use tokio::{
     select,
     signal::unix::{Signal, SignalKind, signal},
@@ -49,5 +50,50 @@ impl ShutdownSignals {
             result = self.terminate.recv() => result,
             result = self.quit.recv() => result,
         }
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct Notifications {}
+
+impl Notifications {
+    pub(crate) fn starting() -> Result<(), Error> {
+        notify(false, &[NotifyState::Status("starting up")])
+    }
+
+    pub(crate) fn ready() -> Result<(), Error> {
+        notify(
+            false,
+            &[
+                NotifyState::Ready,
+                NotifyState::Status("ready to process memes"),
+            ],
+        )
+    }
+
+    pub(crate) fn reloading() -> Result<(), Error> {
+        notify(
+            false,
+            &[
+                NotifyState::Reloading,
+                NotifyState::monotonic_usec_now()?,
+                NotifyState::Status("reloading configuration"),
+            ],
+        )
+    }
+
+    pub(crate) fn stopping() -> Result<(), Error> {
+        notify(
+            false,
+            &[NotifyState::Stopping, NotifyState::Status("shutting down")],
+        )
+    }
+
+    #[allow(unused)]
+    pub(crate) fn failed(code: u32, message: &str) -> Result<(), Error> {
+        notify(
+            false,
+            &[NotifyState::Status(message), NotifyState::Errno(code)],
+        )
     }
 }
