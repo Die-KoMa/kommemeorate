@@ -5,7 +5,9 @@
 
 mod cli;
 mod config;
+mod consumer;
 mod service;
+mod telegram;
 
 use anyhow::Result;
 use clap::Parser;
@@ -13,29 +15,37 @@ use cli::Cli;
 use config::Configuration;
 use env_logger::Env;
 use service::{Notifications, ReloadSignals, ShutdownSignals};
+use telegram::Telegram;
+use tokio::sync::mpsc;
 
 async fn process() -> Result<()> {
     Notifications::starting()?;
     let args = Cli::parse();
-    let configuration = Configuration::load(args.config)?;
+    let mut configuration = Configuration::load(args.config.clone())?;
     let mut reload_signals = ReloadSignals::new()?;
     let mut shutdown_signals = ShutdownSignals::new()?;
+    let (consumer, mut rx) = mpsc::channel(32);
+    let mut telegram = Telegram::new(configuration.telegram()?, consumer)?;
     log::info!("running");
     Notifications::ready()?;
-
-    log::debug!("{:#?}", configuration.telegram()?);
 
     loop {
         tokio::select! {
             _ = reload_signals.reload() => {
                 Notifications::reloading()?;
                 log::info!("reloading");
+                configuration = Configuration::load(args.config.clone())?;
+                telegram = telegram.reload(configuration.telegram()?).await?;
                 Notifications::ready()?;
             }
             _ = shutdown_signals.shutdown() => {
                 Notifications::stopping()?;
                 log::info!("shutting down");
+                telegram.shutdown().await?;
                 break;
+            }
+            meme = rx.recv() => {
+                log::info!("new meme: {meme:#?}");
             }
         }
     }

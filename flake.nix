@@ -275,7 +275,7 @@
           devShells.default = crane.devShell {
             checks = self.checks.${system};
 
-            RUST_LOG = "debug";
+            RUST_LOG = "warn,kommemeorate=debug";
             RUST_BACKTRACE = 1;
 
             packages = lib.attrValues {

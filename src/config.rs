@@ -24,15 +24,22 @@ struct TelegramConfiguration {
     api_id_file: PathBuf,
     api_hash_file: PathBuf,
     password_file: PathBuf,
+    groups: Vec<Group>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct Group {
+    pub(crate) id: i64,
+    pub(crate) name: String,
 }
 
 pub(crate) struct Telegram {
     api_id: i32,
     api_hash: String,
     bot_password: String,
+    groups: Vec<Group>,
 }
 
-#[allow(unused)]
 impl Telegram {
     pub(crate) fn api_credentials(&self) -> (i32, &str) {
         (self.api_id, &self.api_hash)
@@ -41,14 +48,19 @@ impl Telegram {
     pub(crate) fn bot_token(&self) -> &str {
         &self.bot_password
     }
+
+    pub(crate) fn groups(&self) -> impl Iterator<Item = &Group> {
+        self.groups.iter()
+    }
 }
 
 impl Debug for Telegram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Telegram")
-            .field("api_id", &self.api_id)
-            .field("api_hash", &self.api_hash)
+            .field("api_id", &"[REDACTED]")
+            .field("api_hash", &"[REDACTED]")
             .field("bot_password", &"[REDACTED]")
+            .field("groups", &self.groups)
             .finish()
     }
 }
@@ -65,6 +77,7 @@ impl TryFrom<&TelegramConfiguration> for Telegram {
             api_id,
             api_hash,
             bot_password,
+            groups: value.groups.clone(),
         })
     }
 }
@@ -200,6 +213,7 @@ mod test {
             api_id: 0,
             api_hash: String::new(),
             bot_password: NEEDLE.to_string(),
+            groups: vec![],
         };
 
         assert!(format!("{telegram:?}").contains(REDACTED));

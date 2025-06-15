@@ -39,6 +39,11 @@ in
             description = "File containing the kommemeomorate Telegram bot password";
             type = types.path;
           };
+
+          inviteLinks = mkOption {
+            description = "Invite links for channels to collect from";
+            type = types.listOf types.str;
+          };
         };
       };
     };

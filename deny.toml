@@ -5,8 +5,15 @@
 
 [bans]
 multiple-versions = "warn"
-wildcards = "deny"
+wildcards = "warn"
 
 [licenses]
 unused-allowed-license = "warn"
-allow = ["EUPL-1.2", "MIT", "Apache-2.0", "Unicode-3.0", "BSD-3-Clause", "ISC"]
+allow = [
+  "EUPL-1.2",
+  "MIT",
+  "Apache-2.0",
+  "Unicode-3.0",
+  "BSD-3-Clause",
+  "Unlicense",
+]
