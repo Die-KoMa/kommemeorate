@@ -80,7 +80,13 @@
           toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
 
           crane = (inputs.crane.mkLib pkgs).overrideToolchain toolchain;
-          src = crane.cleanCargoSource ./.;
+          src = lib.fileset.toSource {
+            root = ./.;
+            fileset = lib.fileset.unions [
+              (crane.fileset.commonCargoSources ./.)
+              (lib.fileset.fileFilter (file: file.hasExt "sql") ./.)
+            ];
+          };
 
           commonArgs = {
             inherit src;
@@ -117,6 +123,7 @@
                 ./Cargo.toml
                 ./Cargo.lock
                 ./build.rs
+                ./migrations
                 crate
               ];
             };
