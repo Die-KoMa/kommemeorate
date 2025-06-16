@@ -33,7 +33,8 @@ fn main() -> Result<(), Error> {
 
     Man::new(cmd).render(&mut file)?;
 
-    println!("cargo:infog=completion files & manpages are generated: {outdir:?}");
+    println!("cargo:info=completion files & manpages are generated: {outdir:?}");
+    println!("cargo:rerun-if-changed=migrations");
 
     Ok(())
 }

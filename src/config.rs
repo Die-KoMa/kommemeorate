@@ -141,7 +141,6 @@ pub(crate) struct StorageConfiguration {
     path: PathBuf,
 }
 
-#[allow(unused)]
 impl StorageConfiguration {
     pub(crate) fn path(&self) -> &Path {
         &self.path
@@ -154,7 +153,6 @@ pub(crate) struct DatabaseConfiguration {
     url: String,
 }
 
-#[allow(unused)]
 impl DatabaseConfiguration {
     pub(crate) fn url(&self) -> &str {
         &self.url
@@ -187,12 +185,10 @@ impl Configuration {
         (&self.matrix).try_into()
     }
 
-    #[allow(unused)]
     pub(crate) fn database(&self) -> &DatabaseConfiguration {
         &self.database
     }
 
-    #[allow(unused)]
     pub(crate) fn storage(&self) -> &StorageConfiguration {
         &self.storage
     }

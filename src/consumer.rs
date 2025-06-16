@@ -3,20 +3,28 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use std::fmt::Debug;
+mod db;
+
+use std::{
+    fmt::Debug,
+    path::{Path, PathBuf},
+};
 
 use anyhow::Result;
-use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
+use diesel::{
+    PgConnection,
+    dsl::{delete, insert_into, update},
+};
 use grammers_client::types::Chat;
 use tokio::{
-    select,
+    fs, select,
     sync::mpsc::{self, Receiver, Sender},
     task::JoinHandle,
 };
 
 use crate::config::{DatabaseConfiguration, StorageConfiguration};
 
-#[allow(unused)]
 #[derive(Debug)]
 pub(crate) enum Source {
     Telegram {
@@ -24,10 +32,8 @@ pub(crate) enum Source {
         channel: Option<String>,
         id: i32,
     },
-    Matrix {
-        account: String,
-        channel: String,
-    },
+    #[allow(unused)]
+    Matrix { account: String, channel: String },
 }
 
 impl Source {
@@ -46,11 +52,10 @@ impl Source {
 }
 
 pub(crate) struct MemeImage {
-    #[allow(unused)]
     data: Vec<u8>,
     spoiler: bool,
     text: String,
-    timestamp: DateTime<Utc>,
+    timestamp: NaiveDateTime,
 }
 
 impl Debug for MemeImage {
@@ -69,7 +74,7 @@ impl MemeImage {
         data: Vec<u8>,
         spoiler: bool,
         text: String,
-        timestamp: DateTime<Utc>,
+        timestamp: NaiveDateTime,
     ) -> Self {
         Self {
             data,
@@ -80,7 +85,6 @@ impl MemeImage {
     }
 }
 
-#[allow(unused)]
 #[derive(Debug)]
 pub(crate) enum MemeEvent {
     New { image: MemeImage, source: Source },
@@ -161,7 +165,133 @@ impl Consumer {
     }
 }
 
-#[allow(unused)]
+fn file_name(source: &Source) -> String {
+    match source {
+        Source::Telegram {
+            account,
+            channel,
+            id: message_id,
+        } => format!(
+            "telegram-{}-{}-{message_id}.jpg",
+            channel.clone().unwrap_or_default(),
+            account.clone().unwrap_or_default()
+        ),
+        Source::Matrix { account, channel } => {
+            format!("matrix-{channel}-{account}")
+        }
+    }
+}
+
+async fn save_meme(
+    path: PathBuf,
+    db: &mut PgConnection,
+    image: MemeImage,
+    source: Source,
+) -> Result<()> {
+    use db::{models::NewMeme, schema::memes};
+    use diesel::prelude::*;
+    log::debug!("saving meme: {source:?}");
+
+    let file = file_name(&source);
+    match source {
+        Source::Telegram {
+            account,
+            channel,
+            id: message_id,
+        } => {
+            let mut file_path = path.clone();
+            file_path.push(file.clone());
+            log::debug!("writing to {file_path:?}");
+            fs::write(file_path, &image.data).await?;
+
+            let new_meme = NewMeme {
+                spoiler: image.spoiler,
+                text: &image.text,
+                timestamp: image.timestamp,
+                account: &account.unwrap_or_default(),
+                channel: &channel.unwrap_or_default(),
+                filename: &file,
+                telegram_id: Some(message_id),
+            };
+            let result = insert_into(memes::table).values(&new_meme).execute(db);
+            log::debug!("inserted meme: {result:#?}");
+        }
+        _ => todo!("Matrix is not yet supported"),
+    }
+
+    Ok(())
+}
+
+async fn update_meme(
+    path: PathBuf,
+    db: &mut PgConnection,
+    image: MemeImage,
+    source: Source,
+) -> Result<()> {
+    use db::schema::memes::dsl::{
+        account, channel, filename, memes, spoiler, telegram_id, text, timestamp,
+    };
+    use diesel::prelude::*;
+    log::debug!("updating meme: {source:?}");
+
+    let file = file_name(&source);
+    match source {
+        Source::Telegram {
+            account: message_account,
+            channel: message_channel,
+            id: message_id,
+        } => {
+            let mut file_path = path.clone();
+            file_path.push(file.clone());
+            fs::write(file_path, &image.data).await?;
+
+            update(memes.filter(telegram_id.eq(Some(message_id))))
+                .set((
+                    spoiler.eq(image.spoiler),
+                    text.eq(image.text),
+                    timestamp.eq(image.timestamp),
+                    account.eq(message_account.unwrap_or_default()),
+                    channel.eq(message_channel.unwrap_or_default()),
+                    filename.eq(file),
+                ))
+                .execute(db)?;
+        }
+        _ => todo!("Matrix is not yet supported"),
+    }
+
+    Ok(())
+}
+
+async fn delete_meme(path: PathBuf, db: &mut PgConnection, source: Source) -> Result<()> {
+    use db::schema::memes::dsl::{filename, id, memes, telegram_id};
+    use diesel::prelude::*;
+
+    log::debug!("deleting meme: {source:?}");
+
+    match source {
+        Source::Telegram {
+            account: _,
+            channel: _,
+            id: message_id,
+        } => {
+            let files = memes
+                .select((id, filename))
+                .filter(telegram_id.eq(Some(message_id)))
+                .load::<(i32, String)>(db)?;
+
+            for (meme_id, file) in files {
+                let mut file_path = path.clone();
+                file_path.push(Path::new(&file));
+                fs::remove_file(file_path).await?;
+                delete(memes.find(meme_id)).execute(db)?;
+            }
+        }
+        _ => todo!("Matrix is not yet supported"),
+    }
+
+    Ok(())
+}
+
 async fn process(
     storage: StorageConfiguration,
     database: DatabaseConfiguration,
@@ -170,12 +300,16 @@ async fn process(
 ) -> TaskResult {
     log::info!("starting storage");
 
-    async fn handle_event(event: MemeEvent) -> Result<()> {
+    let path = storage.path().to_path_buf();
+    let mut db = db::connect(database.url())?;
+    log::debug!("connected to database");
+
+    async fn handle_event(path: PathBuf, db: &mut PgConnection, event: MemeEvent) -> Result<()> {
         log::info!("new event: {event:#?}");
         match event {
-            MemeEvent::New { image, source } => (),
-            MemeEvent::Updated { image, source } => (),
-            MemeEvent::Deleted { source } => (),
+            MemeEvent::New { image, source } => save_meme(path, db, image, source).await?,
+            MemeEvent::Updated { image, source } => update_meme(path, db, image, source).await?,
+            MemeEvent::Deleted { source } => delete_meme(path, db, source).await?,
         };
 
         Ok(())
@@ -184,7 +318,7 @@ async fn process(
     loop {
         select! {
             Some(event) = consumer.recv() => {
-                handle_event(event).await?;
+                handle_event(path.clone(), &mut db, event).await?;
             }
 
             Some(command) = control.recv() => {

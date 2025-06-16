@@ -1,0 +1,11 @@
+diff --git a/src/consumer/db/schema.rs b/src/consumer/db/schema.rs
+index fc70510..444584d 100644
+--- a/src/consumer/db/schema.rs
++++ b/src/consumer/db/schema.rs
+@@ -1,2 +1,5 @@
+-// @generated automatically by Diesel CLI.
++// © 2025 Maximilian Marx
++// SPDX-FileContributor: Maximilian Marx
++//
++// SPDX-License-Identifier: EUPL-1.2
+ 

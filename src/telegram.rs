@@ -131,8 +131,12 @@ async fn process(
                     } else {
                         message.date()
                     };
-                    let image =
-                        MemeImage::new(bytes, spoiler, message.text().to_string(), timestamp);
+                    let image = MemeImage::new(
+                        bytes,
+                        spoiler,
+                        message.text().to_string(),
+                        timestamp.naive_utc(),
+                    );
                     let source = Source::telegram(
                         message.sender(),
                         groups

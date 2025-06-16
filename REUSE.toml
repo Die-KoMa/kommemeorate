@@ -23,6 +23,16 @@ SPDX-FileCopyrightText = "© 2025 Maximilian Marx"
 SPDX-License-Identifier = "EUPL-1.2"
 
 [[annotations]]
+path = "diesel.toml"
+SPDX-FileCopyrightText = "© 2025 Maximilian Marx"
+SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+path = "migrations/**/*.sql"
+SPDX-FileCopyrightText = "© 2025 Maximilian Marx"
+SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
 path = ".github/workflows/ci.yml"
 SPDX-FileCopyrightText = "© 2025 Maximilian Marx"
 SPDX-License-Identifier = "EUPL-1.2"

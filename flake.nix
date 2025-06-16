@@ -91,6 +91,7 @@
             buildInputs =
               [
                 pkgs.openssl
+                pkgs.postgresql.dev
                 pkgs.installShellFiles
               ]
               ++ lib.optionals pkgs.stdenv.isDarwin [
@@ -277,6 +278,7 @@
 
             RUST_LOG = "warn,kommemeorate=debug";
             RUST_BACKTRACE = 1;
+            DATABASE_URL = "postgres://kommemeorate@/kommemeorate";
 
             packages = lib.attrValues {
               inherit toolchain;
@@ -287,6 +289,7 @@
                 reuse
                 commitizen
                 rust-analyzer
+                diesel-cli
                 ;
             };
 
