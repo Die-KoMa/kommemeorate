@@ -5,8 +5,16 @@
 
 use std::fmt::Debug;
 
+use anyhow::Result;
 use chrono::{DateTime, Utc};
 use grammers_client::types::Chat;
+use tokio::{
+    select,
+    sync::mpsc::{self, Receiver, Sender},
+    task::JoinHandle,
+};
+
+use crate::config::{DatabaseConfiguration, StorageConfiguration};
 
 #[allow(unused)]
 #[derive(Debug)]
@@ -92,4 +100,100 @@ impl MemeEvent {
     pub(crate) fn delete(source: Source) -> Self {
         Self::Deleted { source }
     }
+}
+
+#[derive(Debug)]
+pub(crate) enum Command {
+    Shutdown,
+}
+
+type TaskResult = Result<(Receiver<Command>, Receiver<MemeEvent>)>;
+
+#[derive(Debug)]
+pub(crate) struct Consumer {
+    task: JoinHandle<TaskResult>,
+    control: Sender<Command>,
+}
+
+impl Consumer {
+    pub(crate) fn new(
+        storage: StorageConfiguration,
+        database: DatabaseConfiguration,
+    ) -> Result<(Self, Sender<MemeEvent>)> {
+        let (control, rx) = mpsc::channel(8);
+        let (tx, consumer) = mpsc::channel(32);
+
+        Ok((
+            Self::with_control_and_consumer(storage, database, control, rx, consumer)?,
+            tx,
+        ))
+    }
+
+    fn with_control_and_consumer(
+        storage: StorageConfiguration,
+        database: DatabaseConfiguration,
+        control: Sender<Command>,
+        rx: Receiver<Command>,
+        consumer: Receiver<MemeEvent>,
+    ) -> Result<Self> {
+        let task = tokio::spawn(process(storage, database, rx, consumer));
+
+        Ok(Self { task, control })
+    }
+
+    pub(crate) async fn reload(
+        self,
+        storage: StorageConfiguration,
+        database: DatabaseConfiguration,
+    ) -> Result<Self> {
+        log::info!("restarting storage");
+        let control = self.control.clone();
+        self.control.send(Command::Shutdown).await?;
+        let (rx, consumer) = self.task.await??;
+        Self::with_control_and_consumer(storage, database, control, rx, consumer)
+    }
+
+    pub(crate) async fn shutdown(self) -> Result<()> {
+        log::info!("shutting down storage");
+        self.control.send(Command::Shutdown).await?;
+        self.task.await??;
+        Ok(())
+    }
+}
+
+#[allow(unused)]
+async fn process(
+    storage: StorageConfiguration,
+    database: DatabaseConfiguration,
+    mut control: Receiver<Command>,
+    mut consumer: Receiver<MemeEvent>,
+) -> TaskResult {
+    log::info!("starting storage");
+
+    async fn handle_event(event: MemeEvent) -> Result<()> {
+        log::info!("new event: {event:#?}");
+        match event {
+            MemeEvent::New { image, source } => (),
+            MemeEvent::Updated { image, source } => (),
+            MemeEvent::Deleted { source } => (),
+        };
+
+        Ok(())
+    }
+
+    loop {
+        select! {
+            Some(event) = consumer.recv() => {
+                handle_event(event).await?;
+            }
+
+            Some(command) = control.recv() => {
+                match command {
+                    Command::Shutdown => break
+                }
+            }
+        }
+    }
+
+    Ok((control, consumer))
 }

@@ -135,7 +135,7 @@ impl TryFrom<&MatrixConfiguration> for Matrix {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct StorageConfiguration {
     path: PathBuf,
@@ -148,7 +148,7 @@ impl StorageConfiguration {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct DatabaseConfiguration {
     url: String,

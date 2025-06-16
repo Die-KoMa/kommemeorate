@@ -6,6 +6,7 @@
 mod cli;
 mod config;
 mod consumer;
+mod logging;
 mod service;
 mod telegram;
 
@@ -13,10 +14,10 @@ use anyhow::Result;
 use clap::Parser;
 use cli::Cli;
 use config::Configuration;
-use env_logger::Env;
+use consumer::Consumer;
+use logging::Logger;
 use service::{Notifications, ReloadSignals, ShutdownSignals};
 use telegram::Telegram;
-use tokio::sync::mpsc;
 
 async fn process() -> Result<()> {
     Notifications::starting()?;
@@ -24,8 +25,11 @@ async fn process() -> Result<()> {
     let mut configuration = Configuration::load(args.config.clone())?;
     let mut reload_signals = ReloadSignals::new()?;
     let mut shutdown_signals = ShutdownSignals::new()?;
-    let (consumer, mut rx) = mpsc::channel(32);
-    let mut telegram = Telegram::new(configuration.telegram()?, consumer)?;
+    let (mut consumer, meme_consumer) = Consumer::new(
+        configuration.storage().clone(),
+        configuration.database().clone(),
+    )?;
+    let mut telegram = Telegram::new(configuration.telegram()?, meme_consumer)?;
     log::info!("running");
     Notifications::ready()?;
 
@@ -35,6 +39,7 @@ async fn process() -> Result<()> {
                 Notifications::reloading()?;
                 log::info!("reloading");
                 configuration = Configuration::load(args.config.clone())?;
+                consumer = consumer.reload(configuration.storage().clone(), configuration.database().clone()).await?;
                 telegram = telegram.reload(configuration.telegram()?).await?;
                 Notifications::ready()?;
             }
@@ -42,10 +47,8 @@ async fn process() -> Result<()> {
                 Notifications::stopping()?;
                 log::info!("shutting down");
                 telegram.shutdown().await?;
+                consumer.shutdown().await?;
                 break;
-            }
-            meme = rx.recv() => {
-                log::info!("new meme: {meme:#?}");
             }
         }
     }
@@ -55,7 +58,7 @@ async fn process() -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    Logger::setup()?;
 
     match process().await {
         Ok(_) => {}

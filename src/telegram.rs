@@ -30,7 +30,7 @@ pub struct Telegram {
 
 impl Telegram {
     pub(crate) fn new(config: config::Telegram, consumer: Sender<MemeEvent>) -> Result<Self> {
-        let (tx, rx) = mpsc::channel(32);
+        let (tx, rx) = mpsc::channel(8);
         let task = tokio::spawn(process(config, rx, consumer));
 
         Ok(Self { task, control: tx })
@@ -38,6 +38,7 @@ impl Telegram {
 
     pub(crate) async fn reload(self, config: config::Telegram) -> Result<Self> {
         log::info!("restarting telegram bot");
+        self.control.send(Command::Shutdown).await?;
         let consumer = self.task.await??;
         Self::new(config, consumer)
     }
@@ -114,8 +115,6 @@ async fn process(
         is_edit: bool,
     ) -> Result<()> {
         if is_relevant(groups, message.chat()) {
-            log::debug!("message: {:?}", message.media());
-
             if let Some(Media::Photo(photo)) = message.media() {
                 // don't collect disappearing photos
                 if photo.ttl_seconds().is_none() {

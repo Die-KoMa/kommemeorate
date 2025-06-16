@@ -17,7 +17,7 @@ anyhow = "1.0.98"
 chrono = "0.4.41"
 clap = { version = "4.5.38", features = ["derive"] }
 config = { version = "0.15.11", features = ["toml"], default-features = false }
-env_logger = "0.11.8"
+env_filter = "0.1.3"
 grammers-client = { git = "https://github.com/Lonami/grammers", features = [
   "parse_invite_link",
 ] }
@@ -25,6 +25,7 @@ itertools = "0.14.0"
 log = "0.4.27"
 sd-notify = "0.4.5"
 serde = { version = "1.0.219", features = ["derive"] }
+systemd-journal-logger = "2.2.2"
 test-log = "0.2.17"
 tokio = { version = "1.45.1", features = [
   "macros",
