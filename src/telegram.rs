@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use anyhow::{Error, Result};
 use grammers_client::{
-    Client, Config,
+    Client, Config, InitParams,
     session::Session,
     types::{Chat, Media, Update, update},
 };
@@ -86,7 +86,10 @@ async fn process(
         session: Session::new(),
         api_id,
         api_hash: api_hash.to_string(),
-        params: Default::default(),
+        params: InitParams {
+            catch_up: true,
+            ..Default::default()
+        },
     })
     .await?;
 
