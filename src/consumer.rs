@@ -315,7 +315,7 @@ async fn process(
     log::debug!("connected to database");
 
     async fn handle_event(path: PathBuf, db: &mut PgConnection, event: MemeEvent) -> Result<()> {
-        log::info!("new event: {event:#?}");
+        log::debug!("new event: {event:#?}");
         match event {
             MemeEvent::New { image, source } => save_meme(path, db, image, source).await?,
             MemeEvent::Updated { image, source } => update_meme(path, db, image, source).await?,
