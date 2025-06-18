@@ -97,6 +97,7 @@
             buildInputs =
               [
                 pkgs.openssl
+                pkgs.sqlite.dev
                 pkgs.postgresql.dev
                 pkgs.installShellFiles
               ]

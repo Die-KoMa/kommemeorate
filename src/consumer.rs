@@ -140,7 +140,13 @@ impl Consumer {
         rx: Receiver<Command>,
         consumer: Receiver<MemeEvent>,
     ) -> Result<Self> {
-        let task = tokio::spawn(process(storage, database, rx, consumer));
+        let task = tokio::spawn(async move {
+            let result = process(storage, database, rx, consumer).await;
+            if let Err(ref err) = result {
+                log::error!("{err}");
+            }
+            result
+        });
 
         Ok(Self { task, control })
     }

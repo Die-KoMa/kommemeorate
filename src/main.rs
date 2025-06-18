@@ -7,6 +7,7 @@ mod cli;
 mod config;
 mod consumer;
 mod logging;
+mod matrix;
 mod service;
 mod telegram;
 
@@ -16,6 +17,7 @@ use cli::Cli;
 use config::Configuration;
 use consumer::Consumer;
 use logging::Logger;
+use matrix::Matrix;
 use service::{Notifications, ReloadSignals, ShutdownSignals};
 use telegram::Telegram;
 
@@ -29,7 +31,8 @@ async fn process() -> Result<()> {
         configuration.storage().clone(),
         configuration.database().clone(),
     )?;
-    let mut telegram = Telegram::new(configuration.telegram()?, meme_consumer)?;
+    let mut telegram = Telegram::new(configuration.telegram()?, meme_consumer.clone())?;
+    let mut matrix = Matrix::new(configuration.matrix()?, meme_consumer)?;
     log::info!("running");
     Notifications::ready()?;
 
@@ -41,11 +44,13 @@ async fn process() -> Result<()> {
                 configuration = Configuration::load(args.config.clone())?;
                 consumer = consumer.reload(configuration.storage().clone(), configuration.database().clone()).await?;
                 telegram = telegram.reload(configuration.telegram()?).await?;
+                matrix = matrix.reload(configuration.matrix()?).await?;
                 Notifications::ready()?;
             }
             _ = shutdown_signals.shutdown() => {
                 Notifications::stopping()?;
                 log::info!("shutting down");
+                matrix.shutdown().await?;
                 telegram.shutdown().await?;
                 consumer.shutdown().await?;
                 break;
