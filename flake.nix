@@ -38,6 +38,8 @@
       url = "github:rustsec/advisory-db";
       flake = false;
     };
+
+    nix-std.url = "github:chessai/nix-std";
   };
 
   outputs =
@@ -68,7 +70,7 @@
       };
 
       nixosModules = {
-        kommemeorate = import ./nix/module.nix;
+        kommemeorate = import ./nix/module.nix { std = inputs.nix-std.lib; };
       };
 
       outputsBuilder =

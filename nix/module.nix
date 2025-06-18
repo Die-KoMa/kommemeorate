@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: EUPL-1.2
 
+{ std, ... }:
 {
   config,
   lib,
@@ -15,7 +16,6 @@ let
     mkIf
     mkOption
     types
-    toToml
     ;
 in
 {
@@ -52,7 +52,7 @@ in
 
                   id = mkOption {
                     description = "Telegram group id";
-                    type = types.i32;
+                    type = types.number;
                   };
                 };
               }
@@ -125,12 +125,12 @@ in
 
     user = mkOption {
       description = "user to run as";
-      type = types.user;
+      type = types.str;
     };
 
     group = mkOption {
       description = "group to run as";
-      type = types.group;
+      type = types.str;
     };
   };
 
@@ -138,14 +138,16 @@ in
     let
       cfg = config.die-koma.kommemeorate;
 
-      configFile = pkgs.writeText "kommemeorate-config.toml" (toToml {
-        inherit (cfg)
-          storage
-          database
-          telegram
-          matrix
-          ;
-      });
+      configFile = pkgs.writeText "kommemeorate-config.toml" (
+        std.serde.toTOML {
+          inherit (cfg)
+            storage
+            database
+            telegram
+            matrix
+            ;
+        }
+      );
     in
     mkIf cfg.enable {
 
@@ -165,7 +167,7 @@ in
         };
 
         tmpfiles.rules = [
-          "d ${cfg.storage} 0755 ${cfg.user} ${cfg.group} - -"
+          "d ${cfg.storage.path} 0755 ${cfg.user} ${cfg.group} - -"
         ];
       };
     };
