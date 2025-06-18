@@ -88,12 +88,21 @@ struct MatrixConfiguration {
     homeserver: String,
     username: String,
     password_file: PathBuf,
+    rooms: Vec<Room>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct Room {
+    pub(crate) name: String,
+    pub(crate) address: String,
 }
 
 pub(crate) struct Matrix {
     homeserver: String,
     username: String,
     password: String,
+    rooms: Vec<Room>,
 }
 
 #[allow(unused)]
@@ -109,6 +118,10 @@ impl Matrix {
     pub(crate) fn password(&self) -> &str {
         &self.password
     }
+
+    pub(crate) fn rooms(&self) -> impl Iterator<Item = &Room> {
+        self.rooms.iter()
+    }
 }
 
 impl Debug for Matrix {
@@ -117,6 +130,7 @@ impl Debug for Matrix {
             .field("homeserver", &self.homeserver)
             .field("username", &self.username)
             .field("password", &"[REDACTED]")
+            .field("rooms", &self.rooms)
             .finish()
     }
 }
@@ -130,6 +144,7 @@ impl TryFrom<&MatrixConfiguration> for Matrix {
         Ok(Self {
             homeserver: value.homeserver.clone(),
             username: value.username.clone(),
+            rooms: value.rooms.clone(),
             password,
         })
     }

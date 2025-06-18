@@ -31,7 +31,13 @@ pub struct Telegram {
 impl Telegram {
     pub(crate) fn new(config: config::Telegram, consumer: Sender<MemeEvent>) -> Result<Self> {
         let (tx, rx) = mpsc::channel(8);
-        let task = tokio::spawn(process(config, rx, consumer));
+        let task = tokio::spawn(async move {
+            let result = process(config, rx, consumer).await;
+            if let Err(ref err) = result {
+                log::error!("{err}");
+            }
+            result
+        });
 
         Ok(Self { task, control: tx })
     }
