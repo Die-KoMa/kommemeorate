@@ -237,6 +237,7 @@ mod test {
             homeserver: String::new(),
             username: String::new(),
             password: NEEDLE.to_string(),
+            rooms: vec![],
         };
 
         assert!(format!("{matrix:?}").contains(REDACTED));
