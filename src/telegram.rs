@@ -96,10 +96,7 @@ async fn process(
         session: Session::new(),
         api_id,
         api_hash: api_hash.to_string(),
-        params: InitParams {
-            catch_up: true,
-            ..Default::default()
-        },
+        params: Default::default(),
     })
     .await?;
 
