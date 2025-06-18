@@ -164,6 +164,7 @@ in
             ExecStart = "${lib.getExe pkgs.kommemeorate} --config ${configFile}";
             Type = "simple";
           };
+          wantedBy = [ "multi-user.target" ];
         };
 
         tmpfiles.rules = [
