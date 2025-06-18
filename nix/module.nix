@@ -40,9 +40,23 @@ in
             type = types.path;
           };
 
-          inviteLinks = mkOption {
-            description = "Invite links for channels to collect from";
-            type = types.listOf types.str;
+          groups = mkOption {
+            description = "groups to collect memes from";
+            type = types.listOf (
+              types.submodule {
+                options = {
+                  name = mkOption {
+                    description = "name to identify group";
+                    type = types.str;
+                  };
+
+                  id = mkOption {
+                    description = "Telegram group id";
+                    type = types.i32;
+                  };
+                };
+              }
+            );
           };
         };
       };
@@ -65,6 +79,23 @@ in
           passwordFile = mkOption {
             description = "File containing the kommemeomorate Matrix bot password";
             type = types.path;
+          };
+
+          rooms = mkOption {
+            description = "Rooms to collect memes from";
+            type = types.listOf (
+              types.submodule {
+                name = mkOption {
+                  description = "name to identify Room";
+                  type = types.str;
+                };
+
+                address = mkOption {
+                  description = "Matrix room address";
+                  type = types.str;
+                };
+              }
+            );
           };
         };
       };
