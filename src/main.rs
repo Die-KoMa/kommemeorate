@@ -63,7 +63,10 @@ async fn process() -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init();
+    eprintln!("initialising logging");
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    eprintln!("initialised logging");
+    log::info!("starting kommemeorate");
 
     match process().await {
         Ok(_) => {}

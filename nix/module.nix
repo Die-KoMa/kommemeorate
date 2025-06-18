@@ -163,7 +163,6 @@ in
             Group = cfg.group;
             ExecStart = "${lib.getExe pkgs.kommemeorate} --config ${configFile}";
             Type = "simple";
-            Environment = "RUST_LOG=debug";
           };
         };
 
