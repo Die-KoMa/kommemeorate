@@ -31,7 +31,15 @@ fn log_to_journal(rx: Receiver<Message>, logger: JournalLog, to_journal: bool) -
                 .args(args)
                 .build();
             if to_journal {
-                let _ = logger.journal_send(&record);
+                if let Err(err) = logger.journal_send(&record) {
+                    eprintln!(
+                        "failed to log ({err:?}: [{} {} {}] {}",
+                        Utc::now(),
+                        record.level(),
+                        record.module_path().unwrap_or_default(),
+                        record.args()
+                    );
+                }
             } else {
                 eprintln!(
                     "[{} {} {}] {}",
