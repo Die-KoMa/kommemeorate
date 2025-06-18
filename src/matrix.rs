@@ -44,14 +44,18 @@ impl Matrix {
 
     pub(crate) async fn reload(self, config: config::Matrix) -> Result<Self> {
         log::info!("restarting matrix bot");
-        self.control.send(Command::Shutdown).await?;
+        if !self.control.is_closed() {
+            self.control.send(Command::Shutdown).await?;
+        }
         let consumer = self.task.await??;
         Self::new(config, consumer)
     }
 
     pub(crate) async fn shutdown(self) -> Result<()> {
         log::info!("shutting down matrix bot");
-        self.control.send(Command::Shutdown).await?;
+        if !self.control.is_closed() {
+            self.control.send(Command::Shutdown).await?;
+        }
         self.task.await??;
         Ok(())
     }

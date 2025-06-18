@@ -158,14 +158,18 @@ impl Consumer {
     ) -> Result<Self> {
         log::info!("restarting storage");
         let control = self.control.clone();
-        self.control.send(Command::Shutdown).await?;
+        if !self.control.is_closed() {
+            self.control.send(Command::Shutdown).await?;
+        }
         let (rx, consumer) = self.task.await??;
         Self::with_control_and_consumer(storage, database, control, rx, consumer)
     }
 
     pub(crate) async fn shutdown(self) -> Result<()> {
         log::info!("shutting down storage");
-        self.control.send(Command::Shutdown).await?;
+        if !self.control.is_closed() {
+            self.control.send(Command::Shutdown).await?;
+        }
         self.task.await??;
         Ok(())
     }

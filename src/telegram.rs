@@ -44,14 +44,18 @@ impl Telegram {
 
     pub(crate) async fn reload(self, config: config::Telegram) -> Result<Self> {
         log::info!("restarting telegram bot");
-        self.control.send(Command::Shutdown).await?;
+        if !self.control.is_closed() {
+            self.control.send(Command::Shutdown).await?;
+        }
         let consumer = self.task.await??;
         Self::new(config, consumer)
     }
 
     pub(crate) async fn shutdown(self) -> Result<()> {
         log::info!("shutting down telegram bot");
-        self.control.send(Command::Shutdown).await?;
+        if !self.control.is_closed() {
+            self.control.send(Command::Shutdown).await?;
+        }
         self.task.await??;
         Ok(())
     }
