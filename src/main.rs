@@ -6,7 +6,6 @@
 mod cli;
 mod config;
 mod consumer;
-mod logging;
 mod matrix;
 mod service;
 mod telegram;
@@ -16,7 +15,7 @@ use clap::Parser;
 use cli::Cli;
 use config::Configuration;
 use consumer::Consumer;
-use logging::Logger;
+use env_logger::Env;
 #[allow(unused)]
 use matrix::Matrix;
 use service::{Notifications, ReloadSignals, ShutdownSignals};
@@ -64,7 +63,7 @@ async fn process() -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    Logger::setup()?;
+    env_logger::Builder::from_env(Env::default().default_filter_or("warn")).init();
 
     match process().await {
         Ok(_) => {}
