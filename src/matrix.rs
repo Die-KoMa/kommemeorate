@@ -17,17 +17,16 @@ use tokio::{
     task::JoinHandle,
 };
 
-use crate::{
-    config,
-    consumer::{MemeEvent, MemeImage, Source},
-};
+use crate::{config, consumer::MemeEvent};
 
+#[allow(unused)]
 #[derive(Debug)]
 pub struct Matrix {
     task: JoinHandle<Result<Sender<MemeEvent>, Error>>,
     control: Sender<Command>,
 }
 
+#[allow(unused)]
 impl Matrix {
     pub(crate) fn new(config: config::Matrix, consumer: Sender<MemeEvent>) -> Result<Self> {
         let (tx, rx) = mpsc::channel(8);
@@ -61,13 +60,16 @@ impl Matrix {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 enum Command {
     Shutdown,
 }
 
+#[allow(unused)]
 type RoomMap = HashMap<String, String>;
 
+#[allow(unused)]
 async fn process(
     config: config::Matrix,
     mut control: Receiver<Command>,
@@ -86,7 +88,7 @@ async fn process(
     log::debug!("{result:#?}");
 
     log::debug!("connected to matrix");
-    let mut rooms: RoomMap = HashMap::from_iter(
+    let rooms: RoomMap = HashMap::from_iter(
         config
             .rooms()
             .map(|room| (room.address.clone(), room.name.clone())),
