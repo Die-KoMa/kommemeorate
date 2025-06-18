@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use anyhow::{Error, Result};
 use grammers_client::{
-    Client, Config, InitParams,
+    Client, Config,
     session::Session,
     types::{Chat, Media, Update, update},
 };
@@ -112,6 +112,8 @@ async fn process(
         if let Some(group) = groups.get_mut(&chat.id()) {
             group.chat = Some(chat);
             return true;
+        } else {
+            log::debug!("irrelevant chat {chat:#?}");
         }
 
         false
