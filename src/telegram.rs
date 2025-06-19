@@ -174,7 +174,13 @@ async fn process(
         consumer: Sender<MemeEvent>,
         message: update::MessageDeletion,
     ) -> Result<()> {
-        assert!(message.channel_id().is_none());
+        if let Some(channel) = message.channel_id() {
+            log::info!(
+                "got a deletion with channel id set: {channel}, don't know how to handle this."
+            );
+
+            return Ok(());
+        }
 
         for &id in message.messages() {
             consumer
