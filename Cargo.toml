@@ -27,6 +27,7 @@ env_logger = "0.11.8"
 grammers-client = { git = "https://github.com/Lonami/grammers", features = [
   "parse_invite_link",
 ] }
+grammers-mtsender = { git = "https://github.com/Lonami/grammers" }
 itertools = "0.14.0"
 log = { version = "0.4.27", features = [
   "max_level_debug",

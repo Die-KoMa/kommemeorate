@@ -3,18 +3,21 @@
 //
 // SPDX-License-Identifier: EUPL-1.2
 
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 use anyhow::{Error, Result};
 use grammers_client::{
-    Client, Config,
+    Client, Config, InvocationError,
     session::Session,
     types::{Chat, Media, Update, update},
 };
+
+use grammers_mtsender::RpcError;
 use tokio::{
     select,
     sync::{broadcast, mpsc::Sender},
     task::JoinHandle,
+    time::sleep,
 };
 
 use crate::{
@@ -38,6 +41,18 @@ impl Telegram {
                 match result {
                     Err(ref err) => {
                         log::error!("{err}");
+
+                        if let Some(InvocationError::Rpc(RpcError {
+                            name,
+                            code: 420,
+                            value: Some(seconds),
+                            ..
+                        })) = err.downcast_ref()
+                        {
+                            log::warn!("received flood wait {name}, waiting {seconds} seconds");
+                            let delay = Duration::from_secs(u64::from(*seconds));
+                            sleep(delay).await;
+                        }
                     }
                     Ok(result) => return Ok(result),
                 }
