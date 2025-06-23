@@ -33,6 +33,7 @@ pub(crate) struct Group {
     pub(crate) name: String,
 }
 
+#[derive(Clone)]
 pub(crate) struct Telegram {
     api_id: i32,
     api_hash: String,

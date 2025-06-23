@@ -13,7 +13,7 @@ use grammers_client::{
 };
 use tokio::{
     select,
-    sync::mpsc::{self, Receiver, Sender},
+    sync::{broadcast, mpsc::Sender},
     task::JoinHandle,
 };
 
@@ -24,28 +24,33 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Telegram {
-    task: JoinHandle<Result<Sender<MemeEvent>, Error>>,
-    control: Sender<Command>,
+    pub(crate) task: JoinHandle<Result<Sender<MemeEvent>, Error>>,
+    control: broadcast::Sender<Command>,
 }
 
 impl Telegram {
     pub(crate) fn new(config: config::Telegram, consumer: Sender<MemeEvent>) -> Result<Self> {
-        let (tx, rx) = mpsc::channel(8);
+        let (tx, _rx) = broadcast::channel(8);
+        let control = tx.clone();
         let task = tokio::spawn(async move {
-            let result = process(config, rx, consumer).await;
-            if let Err(ref err) = result {
-                log::error!("{err}");
+            loop {
+                let result = process(config.clone(), tx.subscribe(), consumer.clone()).await;
+                match result {
+                    Err(ref err) => {
+                        log::error!("{err}");
+                    }
+                    Ok(result) => return Ok(result),
+                }
             }
-            result
         });
 
-        Ok(Self { task, control: tx })
+        Ok(Self { task, control })
     }
 
     pub(crate) async fn reload(self, config: config::Telegram) -> Result<Self> {
         log::info!("restarting telegram bot");
-        if !self.control.is_closed() {
-            self.control.send(Command::Shutdown).await?;
+        if self.control.receiver_count() > 0 {
+            self.control.send(Command::Shutdown)?;
         }
         let consumer = self.task.await??;
         Self::new(config, consumer)
@@ -53,15 +58,15 @@ impl Telegram {
 
     pub(crate) async fn shutdown(self) -> Result<()> {
         log::info!("shutting down telegram bot");
-        if !self.control.is_closed() {
-            self.control.send(Command::Shutdown).await?;
+        if self.control.receiver_count() > 0 {
+            self.control.send(Command::Shutdown)?;
         }
         self.task.await??;
         Ok(())
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 enum Command {
     Shutdown,
 }
@@ -85,7 +90,7 @@ type GroupMap = HashMap<i64, Group>;
 
 async fn process(
     config: config::Telegram,
-    mut control: Receiver<Command>,
+    mut control: broadcast::Receiver<Command>,
     consumer: Sender<MemeEvent>,
 ) -> Result<Sender<MemeEvent>> {
     log::info!("starting telegram bot");
@@ -212,7 +217,7 @@ async fn process(
                 }
             }
 
-            Some(command) = control.recv() => {
+            Ok(command) = control.recv() => {
                 match command {
                     Command::Shutdown => break,
                 }
