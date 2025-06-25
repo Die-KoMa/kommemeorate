@@ -7,7 +7,7 @@ use std::{collections::HashMap, time::Duration};
 
 use anyhow::{Error, Result};
 use grammers_client::{
-    Client, Config, InvocationError,
+    Client, Config, FixedReconnect, InvocationError,
     session::Session,
     types::{Chat, Media, Update, update},
 };
@@ -30,6 +30,11 @@ pub struct Telegram {
     pub(crate) task: JoinHandle<Result<Sender<MemeEvent>, Error>>,
     control: broadcast::Sender<Command>,
 }
+
+const RECONNECT_FOREVER: FixedReconnect = FixedReconnect {
+    attempts: usize::MAX,
+    delay: Duration::from_secs(1),
+};
 
 impl Telegram {
     pub(crate) fn new(config: config::Telegram, consumer: Sender<MemeEvent>) -> Result<Self> {
@@ -116,7 +121,10 @@ async fn process(
         session: Session::new(),
         api_id,
         api_hash: api_hash.to_string(),
-        params: Default::default(),
+        params: grammers_client::InitParams {
+            reconnection_policy: &RECONNECT_FOREVER,
+            ..Default::default()
+        },
     })
     .await?;
 
