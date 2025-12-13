@@ -6,7 +6,7 @@
   description = "collects and structures your memes";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     utils.url = "github:gytis-ivaskevicius/flake-utils-plus";
 
     rust-overlay = {
@@ -96,18 +96,17 @@
 
             nativeBuildInputs = [ pkgs.pkg-config ];
 
-            buildInputs =
-              [
-                pkgs.openssl
-                pkgs.sqlite.dev
-                pkgs.postgresql.dev
-                pkgs.installShellFiles
-              ]
-              ++ lib.optionals pkgs.stdenv.isDarwin [
-                pkgs.libiconv
-                pkgs.darwin.apple_sdk.frameworks.Security
-                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-              ];
+            buildInputs = [
+              pkgs.openssl
+              pkgs.sqlite.dev
+              pkgs.postgresql.dev
+              pkgs.installShellFiles
+            ]
+            ++ lib.optionals pkgs.stdenv.isDarwin [
+              pkgs.libiconv
+              pkgs.darwin.apple_sdk.frameworks.Security
+              pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+            ];
           };
 
           cargoArtifacts = crane.buildDepsOnly commonArgs;
