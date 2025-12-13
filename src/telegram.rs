@@ -154,45 +154,45 @@ async fn process(
         message: update::Message,
         is_edit: bool,
     ) -> Result<()> {
-        if is_relevant(groups, message.chat()) {
-            if let Some(Media::Photo(photo)) = message.media() {
-                // don't collect disappearing photos
-                if photo.ttl_seconds().is_none() {
-                    let spoiler = photo.is_spoiler();
-                    let mut bytes = Vec::new();
-                    let mut download = client.iter_download(&message.media().expect("is present"));
+        if is_relevant(groups, message.chat())
+            && let Some(Media::Photo(photo)) = message.media()
+        {
+            // don't collect disappearing photos
+            if photo.ttl_seconds().is_none() {
+                let spoiler = photo.is_spoiler();
+                let mut bytes = Vec::new();
+                let mut download = client.iter_download(&message.media().expect("is present"));
 
-                    while let Some(chunk) = download.next().await? {
-                        bytes.extend(chunk);
-                    }
-
-                    let timestamp = if is_edit {
-                        message.edit_date().expect("is edited")
-                    } else {
-                        message.date()
-                    };
-                    let image = MemeImage::new(
-                        bytes,
-                        spoiler,
-                        message.text().to_string(),
-                        timestamp.naive_utc(),
-                    );
-                    let source = Source::telegram(
-                        message.sender(),
-                        groups
-                            .get(&message.chat().id())
-                            .map(|group| group.name.as_str()),
-                        message.id(),
-                    );
-
-                    let event = if is_edit {
-                        MemeEvent::edit(image, source)
-                    } else {
-                        MemeEvent::new(image, source)
-                    };
-
-                    return Ok(consumer.send(event).await?);
+                while let Some(chunk) = download.next().await? {
+                    bytes.extend(chunk);
                 }
+
+                let timestamp = if is_edit {
+                    message.edit_date().expect("is edited")
+                } else {
+                    message.date()
+                };
+                let image = MemeImage::new(
+                    bytes,
+                    spoiler,
+                    message.text().to_string(),
+                    timestamp.naive_utc(),
+                );
+                let source = Source::telegram(
+                    message.sender(),
+                    groups
+                        .get(&message.chat().id())
+                        .map(|group| group.name.as_str()),
+                    message.id(),
+                );
+
+                let event = if is_edit {
+                    MemeEvent::edit(image, source)
+                } else {
+                    MemeEvent::new(image, source)
+                };
+
+                return Ok(consumer.send(event).await?);
             }
         }
         Ok(())
